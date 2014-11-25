@@ -75,6 +75,16 @@ func (cc *Cache) SetWithExpiration(key, val interface{}, expiration time.Duratio
 	cc.set(key, val, &expiration)
 }
 
+func (cc *Cache) Delete(key interface{}) {
+	cc.del(key)
+}
+
+func (cc *Cache) del(key interface{}) {
+	cc.mutex.Lock()
+	cc.mutex.Unlock()
+	delete(cc.items, key)
+}
+
 func (cc *Cache) returnItem(it *item) {
 	it.expiration = nil
 	it.value = nil

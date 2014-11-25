@@ -24,14 +24,26 @@ func TestSetGet(t *testing.T) {
 	}
 }
 
-func TestGC(t *testing.T) {
+func TestExpiration(t *testing.T) {
 	cc := newCache(&gocache.Option{
 		MaxPoolSize: 1,
 	})
 	ek := "key"
 	ev := "value"
 	cc.SetWithExpiration(ek, ev, time.Second)
-	time.Sleep(3 * time.Second)
+	time.Sleep(1 * time.Second)
+	_, err := cc.Get(ek)
+	if err == nil {
+		t.Errorf("Found: %v", ek)
+	}
+}
+
+func TestDelete(t *testing.T) {
+	cc := newCache(nil)
+	ek := "key"
+	ev := "value"
+	cc.Set(ek, ev)
+	cc.Delete("key")
 	_, err := cc.Get(ek)
 	if err == nil {
 		t.Errorf("Found: %v", ek)
