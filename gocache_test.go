@@ -3,6 +3,7 @@ package gocache_test
 import (
 	"fmt"
 	"github.com/bluele/gocache"
+	"sync"
 	"testing"
 	"time"
 )
@@ -14,12 +15,18 @@ func newCache(opt *gocache.Option) *gocache.Cache {
 func TestSetGet(t *testing.T) {
 	cc := newCache(nil)
 
+	var wait sync.WaitGroup
 	counter := 10000
 
 	for i := 0; i < counter; i++ {
 		s := fmt.Sprintf("%d", i)
-		cc.Set(s, s)
+		wait.Add(1)
+		go func() {
+			cc.Set(s, s)
+			wait.Done()
+		}()
 	}
+	wait.Wait()
 
 	for i := 0; i < counter; i++ {
 		if i%2 == 0 {
@@ -37,10 +44,10 @@ func TestSetGet(t *testing.T) {
 			s := fmt.Sprintf("%d", i)
 			v, err := cc.Get(s)
 			if err != nil {
-				t.Errorf("Not found: key")
+				t.Errorf("Not found key: %v", s)
 			}
 			if v != s {
-				t.Errorf("Expected value: %v", s)
+				t.Errorf("Expected value: %v, not %v", s, v)
 			}
 		}
 	}
