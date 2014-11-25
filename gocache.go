@@ -75,13 +75,40 @@ func (cc *Cache) SetWithExpiration(key, val interface{}, expiration time.Duratio
 	cc.set(key, val, &expiration)
 }
 
+func (cc *Cache) GetOrSet(key interface{}, valFunc func() interface{}) interface{} {
+	val, err := cc.Get(key)
+	if err == nil {
+		return val
+	}
+	val = valFunc()
+	cc.set(key, val, nil)
+	return val
+}
+
+func (cc *Cache) GetOrSetWithExpiration(key interface{}, valFunc func() interface{}, expiration time.Duration) interface{} {
+	val, err := cc.Get(key)
+	if err == nil {
+		return val
+	}
+	val = valFunc()
+	cc.set(key, val, &expiration)
+	return val
+}
+
+func (cc *Cache) Exists(key interface{}) bool {
+	cc.mutex.RLock()
+	cc.mutex.RUnlock()
+	_, ok := cc.items[key]
+	return ok
+}
+
 func (cc *Cache) Delete(key interface{}) {
 	cc.del(key)
 }
 
 func (cc *Cache) del(key interface{}) {
 	cc.mutex.Lock()
-	cc.mutex.Unlock()
+	defer cc.mutex.Unlock()
 	delete(cc.items, key)
 }
 
@@ -118,4 +145,11 @@ func (cc *Cache) Clear() {
 	defer cc.mutex.Unlock()
 
 	cc.items = make(map[interface{}]*item)
+}
+
+func (cc *Cache) Size() int {
+	cc.mutex.RLock()
+	defer cc.mutex.RUnlock()
+
+	return len(cc.items)
 }

@@ -1,6 +1,7 @@
 package gocache_test
 
 import (
+	"fmt"
 	"github.com/bluele/gocache"
 	"testing"
 	"time"
@@ -12,15 +13,36 @@ func newCache(opt *gocache.Option) *gocache.Cache {
 
 func TestSetGet(t *testing.T) {
 	cc := newCache(nil)
-	ek := "key"
-	ev := "value"
-	cc.Set(ek, ev)
-	v, err := cc.Get(ek)
-	if err != nil {
-		t.Errorf("Not found: %v", ek)
+
+	counter := 10000
+
+	for i := 0; i < counter; i++ {
+		s := fmt.Sprintf("%d", i)
+		cc.Set(s, s)
 	}
-	if v != ev {
-		t.Errorf("`%v` != `%v`", ev, v)
+
+	for i := 0; i < counter; i++ {
+		if i%2 == 0 {
+			s := fmt.Sprintf("%d", i)
+			cc.Delete(s)
+		}
+	}
+
+	if cc.Size() != counter/2 {
+		t.Errorf("Size should returns: %v", counter/2)
+	}
+
+	for i := 0; i < counter; i++ {
+		if i%2 != 0 {
+			s := fmt.Sprintf("%d", i)
+			v, err := cc.Get(s)
+			if err != nil {
+				t.Errorf("Not found: key")
+			}
+			if v != s {
+				t.Errorf("Expected value: %v", s)
+			}
+		}
 	}
 }
 
@@ -47,5 +69,15 @@ func TestDelete(t *testing.T) {
 	_, err := cc.Get(ek)
 	if err == nil {
 		t.Errorf("Found: %v", ek)
+	}
+}
+
+func TestGetOrSet(t *testing.T) {
+	cc := newCache(nil)
+	v := cc.GetOrSet("key", func() interface{} {
+		return "value"
+	})
+	if v != "value" {
+		t.Errorf("Expected value: value")
 	}
 }
