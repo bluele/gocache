@@ -6,13 +6,6 @@ import (
 	"time"
 )
 
-type CacheInterface interface {
-	Get(interface{}) (interface{}, error)
-	Set(interface{}, interface{})
-	SetWithExpiration(interface{}, time.Duration)
-	Delete(string) bool
-}
-
 type Cache struct {
 	option    *Option
 	mutex     sync.RWMutex
