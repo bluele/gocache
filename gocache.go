@@ -22,7 +22,6 @@ type Cache struct {
 }
 
 type Option struct {
-	MaxSize     int64
 	MaxPoolSize int64
 }
 
@@ -109,13 +108,21 @@ func (cc *Cache) Delete(key interface{}) {
 func (cc *Cache) del(key interface{}) {
 	cc.mutex.Lock()
 	defer cc.mutex.Unlock()
+	it, ok := cc.items[key]
+	if !ok {
+		return
+	}
 	delete(cc.items, key)
+	cc.returnItem(it)
 }
 
 func (cc *Cache) returnItem(it *item) {
 	it.expiration = nil
 	it.value = nil
-	cc.itemsPool <- it
+	select {
+	case cc.itemsPool <- it:
+	default:
+	}
 }
 
 func (cc *Cache) set(key, val interface{}, expiration *time.Duration) {
