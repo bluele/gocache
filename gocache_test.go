@@ -88,3 +88,29 @@ func TestGetOrSet(t *testing.T) {
 		t.Errorf("Expected value: value")
 	}
 }
+
+func TestClear(t *testing.T) {
+	poolSize := 1000
+	cc := newCache(&gocache.Option{
+		MaxPoolSize: poolSize,
+	})
+
+	var wait sync.WaitGroup
+	counter := 10000
+
+	for i := 0; i < counter; i++ {
+		s := fmt.Sprintf("%d", i)
+		wait.Add(1)
+		go func() {
+			cc.Set(s, s)
+			wait.Done()
+		}()
+	}
+	wait.Wait()
+	cc.Clear()
+
+	size := cc.PoolSize()
+	if size != poolSize {
+		t.Errorf("cc.PoolSize() excepted %v, not %v", poolSize, size)
+	}
+}

@@ -21,7 +21,7 @@ type Cache struct {
 }
 
 type Option struct {
-	MaxPoolSize int64
+	MaxPoolSize int
 }
 
 type item struct {
@@ -115,12 +115,15 @@ func (cc *Cache) del(key interface{}) {
 	cc.returnItem(it)
 }
 
-func (cc *Cache) returnItem(it *item) {
+// returns true if can push old item to itemsPool.
+func (cc *Cache) returnItem(it *item) bool {
 	it.expiration = nil
 	it.value = nil
 	select {
 	case cc.itemsPool <- it:
+		return true
 	default:
+		return false
 	}
 }
 
@@ -150,6 +153,11 @@ func (cc *Cache) Clear() {
 	cc.mutex.Lock()
 	defer cc.mutex.Unlock()
 
+	for _, it := range cc.items {
+		if !cc.returnItem(it) {
+			break
+		}
+	}
 	cc.items = make(map[interface{}]*item)
 }
 
@@ -158,4 +166,11 @@ func (cc *Cache) Size() int {
 	defer cc.mutex.RUnlock()
 
 	return len(cc.items)
+}
+
+func (cc *Cache) PoolSize() int {
+	cc.mutex.Lock()
+	defer cc.mutex.Unlock()
+
+	return len(cc.itemsPool)
 }
