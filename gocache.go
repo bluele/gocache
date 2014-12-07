@@ -11,7 +11,6 @@ type CacheInterface interface {
 	Set(interface{}, interface{})
 	SetWithExpiration(interface{}, time.Duration)
 	Delete(string) bool
-	gc()
 }
 
 type Cache struct {
